@@ -1,0 +1,35 @@
+{
+  "name": "cache-advice",
+  "description": "function decorators for caching",
+  "version": "0.0.1",
+  "author": "Matthew Lyon <matthew@lyonheart.us>",
+  "keywords": [
+    "cache",
+    "functional",
+    "aspect-oriented-programming"
+  ],
+  "tags": [
+    "cache",
+    "functional",
+    "aspect-oriented-programming"
+  ],
+  "homepage": "https://github.com/mattly/node-cache-advice",
+  "repository": "git://github.com/mattly/node-cache-advice.git",
+  "bugs": "https://github.com/mattly/node-cache-advice/issues",
+  "dependencies": {
+    "lru-cache": "2.2.x"
+  },
+  "devDependencies": {
+    "coffee-script": "1.6.x",
+    "mocha": "1.8.x",
+    "chai": "1.4.x"
+  },
+  "scripts": {
+    "prepublish": "make build",
+    "test": "make test"
+  },
+  "main": "advice/index.js",
+  "engines": {
+    "node": "*"
+  }
+}
