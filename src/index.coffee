@@ -20,24 +20,43 @@ module.exports = (config={}) ->
   advice.cache = cache
   advice.shouldStore = shouldStore
 
+  get = (key, callback) ->
+    advice.cache.get key, (err, result) ->
+      error(err)
+      callback(err, result)
+
+  set = (key, value, callback) ->
+    advice.cache.set key, value, (err, result) ->
+      error(err)
+      callback?(err, result)
+
   advice.set = (fn, keymaker) ->
     keymaker or= defaultKeyMaker
     (args..., callback) ->
       key = keymaker(args...)
       fn args..., (err, result...) ->
         if err then return callback(err, result...)
-        if advice.shouldStore(result)
-          cache.set key, result, (err) ->
+        if advice.shouldStore(result) then set(key, result)
         callback(err, result...)
 
   advice.get = (fn, keymaker) ->
     keymaker or= defaultKeyMaker
     (args..., callback) ->
       key = keymaker(args...)
-      cache.get key, (err, result) ->
-        error(err)
-        if result then return callback(err, result...)
+      get key, (err, result) ->
+        if result then return callback(undefined, result...)
         fn(args..., callback)
+
+  advice.readThrough = (fn, keymaker) ->
+    keymaker or= defaultKeyMaker
+    (args..., callback) ->
+      key = keymaker(args...)
+      get key, (err, result) ->
+        if result then return callback(undefined, result...)
+        fn args..., (err, result...) ->
+          if err then return callback(err, result...)
+          if advice.shouldStore(result) then set(key, result)
+          callback(err, result...)
 
   advice.del = (fn, keymaker) ->
     keymaker or= defaultKeyMaker

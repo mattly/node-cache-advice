@@ -94,6 +94,61 @@ describe "getting advice", ->
       assert.instanceOf(err, Error)
       done()
 
+describe "readthrough advice", ->
+  it "uses a provided keymaker", (done) ->
+    cacher.cache.lru.set('foo,bar', ['FOOBAR'])
+    rt = cacher.readThrough(fn, (a...) -> a.join(','))
+    rt 'foo', 'bar', (err, result...) ->
+      assert.deepEqual(result, ['FOOBAR'])
+      done()
+
+  it "works with cache hits", (done) ->
+    cacher.cache.lru.set('foo', ['FOOBAR'])
+    rt = cacher.readThrough(fn)
+    rt 'foo', 'bar', (err, result...) ->
+      assert.deepEqual(result, ['FOOBAR'])
+      done()
+
+  it "stores truthy results on cache miss", (done) ->
+    rt = cacher.readThrough(fn)
+    rt 'foo', 'bar', (err, result...) ->
+      assert.deepEqual(result, ['FOO', 'BAR'])
+      assert.deepEqual(cacher.cache.lru.get('foo'), ['FOO', 'BAR'])
+      done()
+
+  it "does not store falsy results on cache miss", (done) ->
+    rt = cacher.readThrough((a..., cb) -> cb(null, null))
+    rt 'foo', (err, result...) ->
+      assert.deepEqual(result, [null])
+      assert.isUndefined(cacher.cache.lru.get('foo'))
+      done()
+
+  it "does not store result on fn error", (done) ->
+    rt = cacher.readThrough((a..., cb) -> cb(new Error(), 'foo'))
+    rt 'foo', (err, result...) ->
+      assert.instanceOf(err, Error)
+      assert.deepEqual(result, ['foo'])
+      assert.isUndefined(cacher.cache.lru.get('foo'))
+      done()
+
+  it "emits gracefullly on a cache error", (done) ->
+    cacher.cache.get = (key, cb) -> cb(new Error())
+    cacher.cache.set = (key, value, cb) -> cb(new Error())
+    rt = cacher.readThrough(fn)
+    count = 0
+    finish = ->
+      count += 1
+      if count is 3 then done()
+
+    cacher.on 'error', (err) ->
+      assert(err)
+      finish()
+
+    rt 'foo', (err, result...) ->
+      assert.isUndefined(err)
+      assert.deepEqual(result, ['FOO'])
+      finish()
+
 describe "deleting advice", ->
   it "does not remove the key from the cache on error", (done) ->
     cacher.cache.lru.set('foo', ['FOO'])
