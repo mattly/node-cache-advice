@@ -3,7 +3,7 @@ tags = 'cache functional aspect-oriented-programming'.split(' ')
 info =
   name: 'cache-advice'
   description: 'function decorators for caching'
-  version: '0.0.1'
+  version: '0.0.4'
   author: 'Matthew Lyon <matthew@lyonheart.us>'
   keywords: tags
   tags: tags
@@ -30,7 +30,7 @@ info =
     # pretest
     test: "make test"
 
-  main: 'advice/index.js'
+  main: 'index.js'
   engines: { node: '*' }
 
 console.log(JSON.stringify(info, null, 2))
