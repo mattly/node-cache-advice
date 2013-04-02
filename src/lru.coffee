@@ -1,6 +1,6 @@
 lru = require('lru-cache')
 
-callbackify = (fn) ->
+callbackify = (fn, context) ->
   (args..., callback) ->
     try
       result = fn(args...)
@@ -11,7 +11,8 @@ callbackify = (fn) ->
 module.exports = (config) ->
   config or= 50
   cache = {lru: lru(config)}
+
   for method in ['get','set','del']
-    cache[method] = callbackify(cache.lru[method])
+    cache[method] = callbackify(cache.lru[method], cache.lru)
   cache
 

@@ -5,7 +5,7 @@
 
   lru = require('lru-cache');
 
-  callbackify = function(fn) {
+  callbackify = function(fn, context) {
     return function() {
       var args, callback, result, _i;
       args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), callback = arguments[_i++];
@@ -27,7 +27,7 @@
     _ref = ['get', 'set', 'del'];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       method = _ref[_i];
-      cache[method] = callbackify(cache.lru[method]);
+      cache[method] = callbackify(cache.lru[method], cache.lru);
     }
     return cache;
   };
