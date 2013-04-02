@@ -6,7 +6,7 @@
   events = require('events');
 
   module.exports = function(config) {
-    var advice, cache, defaultKeyMaker, error, shouldStore;
+    var advice, cache, defaultKeyMaker, errNotifier, get, set, shouldStore;
     if (config == null) {
       config = {};
     }
@@ -32,13 +32,22 @@
       return store;
     };
     advice = new events.EventEmitter();
-    error = function(err) {
-      if (err) {
-        return advice.emit('error', err);
-      }
-    };
     advice.cache = cache;
     advice.shouldStore = shouldStore;
+    errNotifier = function(callback) {
+      return function(err, result) {
+        if (err) {
+          advice.emit('error', err);
+        }
+        return typeof callback === "function" ? callback(err, result) : void 0;
+      };
+    };
+    get = function(key, callback) {
+      return advice.cache.get(key, errNotifier(callback));
+    };
+    set = function(key, value, callback) {
+      return advice.cache.set(key, value, errNotifier(callback));
+    };
     advice.set = function(fn, keymaker) {
       keymaker || (keymaker = defaultKeyMaker);
       return function() {
@@ -52,7 +61,7 @@
             return callback.apply(null, [err].concat(__slice.call(result)));
           }
           if (advice.shouldStore(result)) {
-            cache.set(key, result, function(err) {});
+            set(key, result);
           }
           return callback.apply(null, [err].concat(__slice.call(result)));
         }]));
@@ -64,12 +73,35 @@
         var args, callback, key, _i;
         args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), callback = arguments[_i++];
         key = keymaker.apply(null, args);
-        return cache.get(key, function(err, result) {
-          error(err);
+        return get(key, function(err, result) {
           if (result) {
-            return callback.apply(null, [err].concat(__slice.call(result)));
+            return callback.apply(null, [void 0].concat(__slice.call(result)));
           }
           return fn.apply(null, __slice.call(args).concat([callback]));
+        });
+      };
+    };
+    advice.readThrough = function(fn, keymaker) {
+      keymaker || (keymaker = defaultKeyMaker);
+      return function() {
+        var args, callback, key, _i;
+        args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), callback = arguments[_i++];
+        key = keymaker.apply(null, args);
+        return get(key, function(err, result) {
+          if (result) {
+            return callback.apply(null, [void 0].concat(__slice.call(result)));
+          }
+          return fn.apply(null, __slice.call(args).concat([function() {
+            var err, result;
+            err = arguments[0], result = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+            if (err) {
+              return callback.apply(null, [err].concat(__slice.call(result)));
+            }
+            if (advice.shouldStore(result)) {
+              set(key, result);
+            }
+            return callback.apply(null, [err].concat(__slice.call(result)));
+          }]));
         });
       };
     };
@@ -85,7 +117,7 @@
           if (err) {
             return callback.apply(null, [err].concat(__slice.call(result)));
           }
-          cache.del(key, error);
+          cache.del(key, errNotifier());
           return callback.apply(null, [err].concat(__slice.call(result)));
         }]));
       };

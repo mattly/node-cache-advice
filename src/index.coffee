@@ -15,20 +15,19 @@ module.exports = (config={}) ->
     store
 
   advice = new events.EventEmitter()
-  error = (err) ->
-    if err then advice.emit('error', err)
   advice.cache = cache
   advice.shouldStore = shouldStore
 
+  errNotifier = (callback) ->
+    (err, result) ->
+      if err then advice.emit('error', err)
+      callback?(err, result)
+
   get = (key, callback) ->
-    advice.cache.get key, (err, result) ->
-      error(err)
-      callback(err, result)
+    advice.cache.get(key, errNotifier(callback))
 
   set = (key, value, callback) ->
-    advice.cache.set key, value, (err, result) ->
-      error(err)
-      callback?(err, result)
+    advice.cache.set(key, value, errNotifier(callback))
 
   advice.set = (fn, keymaker) ->
     keymaker or= defaultKeyMaker
@@ -64,7 +63,7 @@ module.exports = (config={}) ->
       key = keymaker(args...)
       fn args..., (err, result...) ->
         if err then return callback(err, result...)
-        cache.del(key, error)
+        cache.del(key, errNotifier())
         callback(err, result...)
 
   advice
