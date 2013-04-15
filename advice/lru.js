@@ -10,7 +10,7 @@
       var args, callback, result, _i;
       args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), callback = arguments[_i++];
       try {
-        result = fn.apply(null, args);
+        result = fn.apply(context, args);
         return callback(void 0, result);
       } catch (e) {
         return callback(e);

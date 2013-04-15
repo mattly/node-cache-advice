@@ -3,7 +3,7 @@ lru = require('lru-cache')
 callbackify = (fn, context) ->
   (args..., callback) ->
     try
-      result = fn(args...)
+      result = fn.apply(context, args)
       callback(undefined, result)
     catch e
       callback(e)

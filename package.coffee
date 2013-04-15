@@ -3,7 +3,7 @@ tags = 'cache functional aspect-oriented-programming'.split(' ')
 info =
   name: 'cache-advice'
   description: 'function decorators for caching'
-  version: '0.0.5'
+  version: '0.0.6'
   author: 'Matthew Lyon <matthew@lyonheart.us>'
   keywords: tags
   tags: tags
