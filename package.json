@@ -20,9 +20,7 @@
     "lru-cache": "2.2.x"
   },
   "devDependencies": {
-    "coffee-script": "1.6.x",
-    "mocha": "1.8.x",
-    "chai": "1.4.x"
+    "coffee-script": "1.6.x"
   },
   "scripts": {
     "prepublish": "make build",

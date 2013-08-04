@@ -17,10 +17,6 @@ info =
   devDependencies:
     # deal with it
     'coffee-script': '1.6.x'
-    # test runner / framework
-    mocha: '1.8.x'
-    # assertions helper
-    chai: '1.4.x'
 
   scripts:
     # preinstall
@@ -34,5 +30,4 @@ info =
   engines: { node: '*' }
 
 console.log(JSON.stringify(info, null, 2))
-
 
