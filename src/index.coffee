@@ -21,11 +21,19 @@ del = (cache, key, cb) ->
   done = (err, result) -> cb?()
   cache.del(key, done)
 
+cloneState = (previous, next) ->
+  next[key] = value for own key, value of previous when not next[key]
+  next
+
 class Advice extends events.EventEmitter
   constructor: (@state) ->
     super()
     @state.cache or= require('./lru')(@state.lru)
     @cache = @state.cache
+
+  keyStrategy: (keyStrategy) ->
+    if keyStrategy then new Advice(cloneState(@state, {keyStrategy}))
+    else @state.keyStrategy
 
   updates: (fn) ->
     {cache, keyStrategy, prefix} = @state

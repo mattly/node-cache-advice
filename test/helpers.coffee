@@ -4,7 +4,12 @@ module.exports = ->
   out.test = (fn) -> out.assertions.push(fn)
   out.run = ->
     if out.assertions.length is 0 then console.log("OK")
-    else process.nextTick(-> out.assertions.shift()(out.run))
+    else process.nextTick ->
+      nextFn = out.assertions.shift()
+      if nextFn.length > 0 then nextFn(out.run)
+      else
+        nextFn()
+        out.run()
 
   out.cache = ->
     store = []
