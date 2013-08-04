@@ -16,6 +16,9 @@ get = (cache, key, cb) -> cache.get(key, cb)
 set = (cache, key, val, cb) ->
   done = (err, result) -> cb?()
   cache.set(key, val, done)
+del = (cache, key, cb) ->
+  done = (err, result) -> cb?()
+  cache.del(key, done)
 
 class Advice extends events.EventEmitter
   constructor: (@state) ->
@@ -35,6 +38,13 @@ class Advice extends events.EventEmitter
         else fn(args..., handleResult)
       get(cache, key, handleCache)
 
+  expires: (fn) ->
+    {cache, keyStrategy, prefix} = @state
+    (args..., callback) ->
+      key = keyFor(keyStrategy, prefix, args...)
+      del(cache, key)
+      fn(args..., callback)
+
 module.exports = (config={}) -> new Advice(config)
 
   # errNotifier = (callback) ->
@@ -50,22 +60,3 @@ module.exports = (config={}) -> new Advice(config)
   #       if err then return callback(err, result...)
   #       if advice.shouldStore(result) then set(key, result)
   #       callback(err, result...)
-
-  # advice.get = (fn, keymaker) ->
-  #   keymaker or= defaultKeyMaker
-  #   (args..., callback) ->
-  #     key = keymaker(args...)
-  #     get key, (err, result) ->
-  #       if result then return callback(undefined, result...)
-  #       fn(args..., callback)
-
-  # advice.del = (fn, keymaker) ->
-  #   keymaker or= defaultKeyMaker
-  #   (args..., callback) ->
-  #     key = keymaker(args...)
-  #     fn args..., (err, result...) ->
-  #       if err then return callback(err, result...)
-  #       cache.del(key, errNotifier())
-  #       callback(err, result...)
-
-  # advice
