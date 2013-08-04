@@ -4,9 +4,7 @@ isNothing = (thing) -> thing is null or thing is undefined
 anyThing  = (things) -> things.length > 1 or not isNothing(things[0])
 
 keyFor = (strategy, prefix, args...) ->
-  prefix or= ''
-  key = strategy?(args...) or "#{args[0]}"
-  "#{prefix}#{key}"
+  "#{prefix or ''}#{strategy(args...)}"
 
 setIfThing = (cache, key, callback) ->
   (err, result...) ->
@@ -28,8 +26,16 @@ cloneState = (previous, next) ->
 class Advice extends events.EventEmitter
   constructor: (@state) ->
     super()
+    @state.keyStrategy or= (args...) -> args.join()
     @state.cache or= require('./lru')(@state.lru)
     @cache = @state.cache
+
+  prefix: (prefix) ->
+    if prefix then new Advice(cloneState(@state, {prefix}))
+    else @state.prefix
+
+  appendPrefix: (prefix) ->
+    new Advice(cloneState(@state, {prefix: "#{@state.prefix}#{prefix}"}))
 
   keyStrategy: (keyStrategy) ->
     if keyStrategy then new Advice(cloneState(@state, {keyStrategy}))

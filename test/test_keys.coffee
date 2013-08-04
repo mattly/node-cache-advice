@@ -17,4 +17,27 @@ helper.test ->
   cacher = main({keyStrategy})
   assert.equal(keyStrategy, cacher.keyStrategy())
 
+# prefix/1 forks the Advice with a new prefix
+helper.test ->
+  [oldPrefix, newPrefix] = ["foo:", "bar."]
+  cacher = main({prefix: oldPrefix})
+  barSpace = cacher.prefix(newPrefix)
+  assert.equal(oldPrefix, cacher.state.prefix)
+  assert.equal(newPrefix, barSpace.state.prefix)
+
+# prefix/0 returns the existing prefix
+helper.test ->
+  prefix = "foo."
+  cacher = main({prefix})
+  assert.equal(prefix, cacher.prefix())
+
+# appendPrefix/1 forks the Advice with an appended prefix.
+helper.test ->
+  prefix = "foo."
+  segment = "bar."
+  cacher = main({prefix})
+  barSpace = cacher.appendPrefix(segment)
+  assert.equal(prefix, cacher.state.prefix)
+  assert.equal("#{prefix}#{segment}", barSpace.state.prefix)
+
 helper.run()
