@@ -2,7 +2,7 @@
 
 by Matthew Lyon <matthew@lyonheart.us>
 
-[![Build Status](https://travis-ci.org/mattly/node-cache-advice.png?branch=master)][https://travis-ci.org/mattly/node-cache-advice]
+[![Build Status](https://travis-ci.org/mattly/node-cache-advice.png?branch=master)](https://travis-ci.org/mattly/node-cache-advice)
 
 A javascript module for caching the results of functions that take callbacks in
 the node [err, response] pattern. Useful for decorating functions that make slow
