@@ -1,69 +1,66 @@
 events = require('events')
 
-module.exports = (config={}) ->
+isNothing = (thing) -> thing is null or thing is undefined
+anyThing  = (things) -> things.length > 1 or not isNothing(things[0])
 
-  if config.cache
-    cache = config.cache
-  else
-    cache = require('./lru')(config.lru)
+keyFor = (strategy, prefix, args...) ->
+  "#{prefix or ''}#{strategy(args...)}"
 
-  defaultKeyMaker = (args...) -> "#{args[0]}"
+setIfThing = (cache, key, callback) ->
+  (err, result...) ->
+    if not err and anyThing(result) then set(cache, key, result)
+    callback(err, result...)
 
-  shouldStore = (args) ->
-    store = false
-    store = true for arg in args when arg
-    store
+get = (cache, key, cb) -> cache.get(key, cb)
+set = (cache, key, val, cb) ->
+  done = (err, result) -> cb?()
+  cache.set(key, val, done)
+del = (cache, key, cb) ->
+  done = (err, result) -> cb?()
+  cache.del(key, done)
 
-  advice = new events.EventEmitter()
-  advice.cache = cache
-  advice.shouldStore = shouldStore
+cloneState = (previous, next) ->
+  next[key] = value for own key, value of previous when not next[key]
+  next
 
-  errNotifier = (callback) ->
-    (err, result) ->
-      if err then advice.emit('error', err)
-      callback?(err, result)
+class Advice extends events.EventEmitter
+  constructor: (@state) ->
+    super()
+    @state.keyStrategy or= (args...) -> args.join()
+    @state.cache or= require('./lru')(@state.lru)
+    @cache = @state.cache
 
-  get = (key, callback) ->
-    advice.cache.get(key, errNotifier(callback))
+  prefix: (prefix) ->
+    if prefix then new Advice(cloneState(@state, {prefix}))
+    else @state.prefix
 
-  set = (key, value, callback) ->
-    advice.cache.set(key, value, errNotifier(callback))
+  appendPrefix: (prefix) ->
+    new Advice(cloneState(@state, {prefix: "#{@state.prefix}#{prefix}"}))
 
-  advice.set = (fn, keymaker) ->
-    keymaker or= defaultKeyMaker
+  keyStrategy: (keyStrategy) ->
+    if keyStrategy then new Advice(cloneState(@state, {keyStrategy}))
+    else @state.keyStrategy
+
+  updates: (fn) ->
+    {cache, keyStrategy, prefix} = @state
     (args..., callback) ->
-      key = keymaker(args...)
-      fn args..., (err, result...) ->
-        if err then return callback(err, result...)
-        if advice.shouldStore(result) then set(key, result)
-        callback(err, result...)
+      key = keyFor(keyStrategy, prefix, args...)
+      fn(args..., setIfThing(cache, key, callback))
 
-  advice.get = (fn, keymaker) ->
-    keymaker or= defaultKeyMaker
+  readThrough: (fn) ->
+    {cache, keyStrategy, prefix} = @state
     (args..., callback) ->
-      key = keymaker(args...)
-      get key, (err, result) ->
-        if result then return callback(undefined, result...)
-        fn(args..., callback)
+      key = keyFor(keyStrategy, prefix, args...)
+      handleCache = (err, result) ->
+        if not isNothing(result) then callback(undefined, result...)
+        else fn(args..., setIfThing(cache, key, callback))
+      get(cache, key, handleCache)
 
-  advice.readThrough = (fn, keymaker) ->
-    keymaker or= defaultKeyMaker
+  expires: (fn) ->
+    {cache, keyStrategy, prefix} = @state
     (args..., callback) ->
-      key = keymaker(args...)
-      get key, (err, result) ->
-        if result then return callback(undefined, result...)
-        fn args..., (err, result...) ->
-          if err then return callback(err, result...)
-          if advice.shouldStore(result) then set(key, result)
-          callback(err, result...)
+      key = keyFor(keyStrategy, prefix, args...)
+      del(cache, key)
+      fn(args..., callback)
 
-  advice.del = (fn, keymaker) ->
-    keymaker or= defaultKeyMaker
-    (args..., callback) ->
-      key = keymaker(args...)
-      fn args..., (err, result...) ->
-        if err then return callback(err, result...)
-        cache.del(key, errNotifier())
-        callback(err, result...)
-
-  advice
+module.exports = (config={}) -> new Advice(config)
