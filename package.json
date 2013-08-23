@@ -1,7 +1,7 @@
 {
   "name": "cache-advice",
   "description": "function decorators for caching",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "author": "Matthew Lyon <matthew@lyonheart.us>",
   "keywords": [
     "cache",
@@ -23,8 +23,8 @@
     "coffee-script": "1.6.x"
   },
   "scripts": {
-    "prepublish": "make build",
-    "test": "make test"
+    "prepublish": "./node_modules/.bin/coffee -c -o advice src/*.coffee",
+    "test": "./node_modules/.bin/coffee test/run.coffee"
   },
   "main": "index.js",
   "engines": {
